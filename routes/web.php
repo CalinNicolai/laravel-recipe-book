@@ -17,10 +17,15 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
 
 Route::middleware(['auth', 'role:admin'])->group(function () {
-    Route::get('/admin', function(){
+    Route::get('/admin', function () {
         dd('loshara');
     })->name('admin.dashboard');
+    Route::prefix('admin')->group(function () {
+        Route::resource('recipes', \App\Http\Controllers\RecipeController::class);
+        Route::resource('categories', \App\Http\Controllers\CategoryController::class);
+        Route::resource('ingredients', \App\Http\Controllers\IngredientController::class);
+    });
 });
