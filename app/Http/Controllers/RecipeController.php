@@ -12,10 +12,41 @@ class RecipeController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $recipes = Recipe::all();
-        return view('admin.recipes.index', compact('recipes'));
+        $query = Recipe::query();
+
+        if ($search = $request->input('search')) {
+            $query->where('name', 'like', '%' . $search . '%');
+        }
+
+        if ($category = $request->input('category')) {
+            $query->where('category_id', $category);
+        }
+
+        if ($sort = $request->input('sort')) {
+            if ($sort == 'name_asc') {
+                $query->orderBy('name', 'asc');
+            } elseif ($sort == 'name_desc') {
+                $query->orderBy('name', 'desc');
+            } elseif ($sort == 'ingredients_asc') {
+                $query->withCount('ingredients')->orderBy('ingredients_count', 'asc');
+            } elseif ($sort == 'ingredients_desc') {
+                $query->withCount('ingredients')->orderBy('ingredients_count', 'desc');
+            } elseif ($sort == 'steps_asc') {
+                $query->withCount('steps')->orderBy('steps_count', 'asc');
+            } elseif ($sort == 'steps_desc') {
+                $query->withCount('steps')->orderBy('steps_count', 'desc');
+            }
+        } else {
+            $query->orderBy('name', 'asc');
+        }
+
+        $recipes = $query->with(['category'])->withCount(['ingredients', 'steps'])->paginate(10);
+
+        $categories = Category::all();
+
+        return view('admin.recipes.index', compact('recipes', 'categories'));
     }
 
     /**

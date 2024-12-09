@@ -2,18 +2,27 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Category;
+use App\Http\Requests\IngredientRequest;
 use App\Models\Ingredient;
+use App\Repositories\IngredientRepository;
+use App\Models\Category;
 use Illuminate\Http\Request;
 
 class IngredientController extends Controller
 {
+    protected $ingredientRepository;
+
+    public function __construct(IngredientRepository $ingredientRepository)
+    {
+        $this->ingredientRepository = $ingredientRepository;
+    }
+
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $ingredients = Ingredient::all();
+        $ingredients = $this->ingredientRepository->searchAndSort($request);
 
         return view('admin.ingredients.index', compact('ingredients'));
     }
@@ -24,31 +33,19 @@ class IngredientController extends Controller
     public function create()
     {
         $categories = Category::all();
-
         return view('admin.ingredients.create', compact('categories'));
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(IngredientRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|unique:ingredients|max:255',
-            'category_id' => 'nullable|exists:categories,id',
-        ]);
+        $validated = $request->validated();
 
         Ingredient::create($validated);
 
         return redirect()->route('ingredients.index')->with('success', 'Ингредиент успешно добавлен!');
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(Ingredient $ingredient)
-    {
-        //
     }
 
     /**
@@ -63,12 +60,9 @@ class IngredientController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Ingredient $ingredient)
+    public function update(IngredientRequest $request, Ingredient $ingredient)
     {
-        $validated = $request->validate([
-            'name' => 'required|unique:ingredients,name,' . $ingredient->id . '|max:255',
-            'category_id' => 'nullable|exists:categories,id',
-        ]);
+        $validated = $request->validated();
 
         $ingredient->update($validated);
 

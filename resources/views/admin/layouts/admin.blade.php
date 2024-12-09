@@ -13,7 +13,7 @@
 @include('admin.components.navbar')
 
 <!-- Main Content -->
-<div class="container">
+<div class="w-full p-5:">
     @yield('content')
 </div>
 
