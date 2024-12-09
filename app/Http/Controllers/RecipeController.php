@@ -38,6 +38,8 @@ class RecipeController extends Controller
             'ingredients' => 'array',
             'ingredients.*.id' => 'exists:ingredients,id',
             'ingredients.*.quantity' => 'required_with:ingredients.*.id|string',
+            'steps' => 'array',
+            'steps.*.description' => 'required|string',
         ]);
 
         $recipe = Recipe::create($validated);
@@ -45,6 +47,15 @@ class RecipeController extends Controller
         if (isset($validated['ingredients'])) {
             foreach ($validated['ingredients'] as $ingredient) {
                 $recipe->ingredients()->attach($ingredient['id'], ['quantity' => $ingredient['quantity']]);
+            }
+        }
+
+        if (isset($validated['steps'])) {
+            foreach ($validated['steps'] as $index => $step) {
+                $recipe->steps()->create([
+                    'description' => $step['description'],
+                    'step_number' => $index + 1,
+                ]);
             }
         }
 
@@ -79,6 +90,8 @@ class RecipeController extends Controller
             'ingredients' => 'array',
             'ingredients.*.id' => 'exists:ingredients,id',
             'ingredients.*.quantity' => 'required_with:ingredients.*.id|string',
+            'steps' => 'array',
+            'steps.*.description' => 'required|string',
         ]);
 
         $recipe->update($validated);
@@ -87,6 +100,16 @@ class RecipeController extends Controller
         if (isset($validated['ingredients'])) {
             foreach ($validated['ingredients'] as $ingredient) {
                 $recipe->ingredients()->attach($ingredient['id'], ['quantity' => $ingredient['quantity']]);
+            }
+        }
+
+        $recipe->steps()->delete();
+        if (isset($validated['steps'])) {
+            foreach ($validated['steps'] as $index => $step) {
+                $recipe->steps()->create([
+                    'description' => $step['description'],
+                    'step_number' => $index + 1,
+                ]);
             }
         }
 

@@ -54,6 +54,18 @@
                     <button type="button" id="add-ingredient" class="bg-green-500 text-white px-4 py-2 rounded">Добавить ингредиент</button>
                 </div>
                 <div>
+                    <label for="steps" class="block text-sm font-medium text-gray-700">Этапы готовки</label>
+                    <div id="step-list">
+                        @foreach($recipe->steps as $index => $step)
+                            <div class="flex space-x-2 mb-2">
+                                <input type="text" name="steps[{{ $index }}][description]" value="{{ $step->description }}" placeholder="Описание шага" class="border rounded-lg p-2 w-full">
+                                <button type="button" class="bg-red-500 text-white px-2 py-1 rounded remove-step">-</button>
+                            </div>
+                        @endforeach
+                    </div>
+                    <button type="button" id="add-step" class="bg-green-500 text-white px-4 py-2 rounded">Добавить шаг</button>
+                </div>
+                <div>
                     <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Сохранить</button>
                 </div>
             </form>
@@ -86,6 +98,20 @@
             attachRemoveHandler(div.querySelector('.remove-ingredient'));
         });
 
+        document.getElementById('add-step').addEventListener('click', () => {
+            const list = document.getElementById('step-list');
+            const index = list.children.length;
+            const div = document.createElement('div');
+            div.className = 'flex space-x-2 mb-2';
+            div.innerHTML = `
+                <input type="text" name="steps[${index}][description]" placeholder="Описание шага" class="border rounded-lg p-2 w-full">
+                <button type="button" class="bg-red-500 text-white px-2 py-1 rounded remove-step">-</button>
+            `;
+            list.appendChild(div);
+            attachRemoveHandler(div.querySelector('.remove-step'));
+        });
+
         document.querySelectorAll('.remove-ingredient').forEach(attachRemoveHandler);
+        document.querySelectorAll('.remove-step').forEach(attachRemoveHandler);
     </script>
 @endsection
