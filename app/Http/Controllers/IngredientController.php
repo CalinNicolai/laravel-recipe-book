@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Category;
 use App\Models\Ingredient;
 use Illuminate\Http\Request;
 
@@ -12,7 +13,9 @@ class IngredientController extends Controller
      */
     public function index()
     {
-        //
+        $ingredients = Ingredient::all();
+
+        return view('admin.ingredients.index', compact('ingredients'));
     }
 
     /**
@@ -20,7 +23,9 @@ class IngredientController extends Controller
      */
     public function create()
     {
-        //
+        $categories = Category::all();
+
+        return view('admin.ingredients.create', compact('categories'));
     }
 
     /**
@@ -28,7 +33,14 @@ class IngredientController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'name' => 'required|unique:ingredients|max:255',
+            'category_id' => 'nullable|exists:categories,id',
+        ]);
+
+        Ingredient::create($validated);
+
+        return redirect()->route('ingredients.index')->with('success', 'Ингредиент успешно добавлен!');
     }
 
     /**
@@ -44,7 +56,8 @@ class IngredientController extends Controller
      */
     public function edit(Ingredient $ingredient)
     {
-        //
+        $categories = Category::all();
+        return view('admin.ingredients.edit', compact('ingredient', 'categories'));
     }
 
     /**
@@ -52,7 +65,14 @@ class IngredientController extends Controller
      */
     public function update(Request $request, Ingredient $ingredient)
     {
-        //
+        $validated = $request->validate([
+            'name' => 'required|unique:ingredients,name,' . $ingredient->id . '|max:255',
+            'category_id' => 'nullable|exists:categories,id',
+        ]);
+
+        $ingredient->update($validated);
+
+        return redirect()->route('ingredients.index')->with('success', 'Ингредиент успешно обновлен!');
     }
 
     /**
@@ -60,6 +80,8 @@ class IngredientController extends Controller
      */
     public function destroy(Ingredient $ingredient)
     {
-        //
+        $ingredient->delete();
+
+        return redirect()->route('ingredients.index')->with('success', 'Ингредиент успешно удален!');
     }
 }

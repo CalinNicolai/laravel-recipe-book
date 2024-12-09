@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Category;
+use App\Models\Ingredient;
 use App\Models\Recipe;
 use Illuminate\Http\Request;
 
@@ -12,7 +14,8 @@ class RecipeController extends Controller
      */
     public function index()
     {
-        //
+        $recipes = Recipe::all();
+        return view('admin.recipes.index', compact('recipes'));
     }
 
     /**
@@ -20,15 +23,32 @@ class RecipeController extends Controller
      */
     public function create()
     {
-        //
+        $categories = Category::all();
+        $ingredients = Ingredient::all();
+        return view('admin.recipes.create', compact('categories', 'ingredients'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    // Store recipe in the database
     public function store(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'name' => 'required|max:255',
+            'description' => 'nullable|string',
+            'category_id' => 'nullable|exists:categories,id',
+            'ingredients' => 'array',
+            'ingredients.*.id' => 'exists:ingredients,id',
+            'ingredients.*.quantity' => 'required_with:ingredients.*.id|string',
+        ]);
+
+        $recipe = Recipe::create($validated);
+
+        if (isset($validated['ingredients'])) {
+            foreach ($validated['ingredients'] as $ingredient) {
+                $recipe->ingredients()->attach($ingredient['id'], ['quantity' => $ingredient['quantity']]);
+            }
+        }
+
+        return redirect()->route('recipes.index')->with('success', 'Рецепт успешно добавлен!');
     }
 
     /**
@@ -44,15 +64,33 @@ class RecipeController extends Controller
      */
     public function edit(Recipe $recipe)
     {
-        //
+        $categories = Category::all();
+        $ingredients = Ingredient::all();
+        return view('admin.recipes.edit', compact('recipe', 'categories', 'ingredients'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
+    // Update recipe in the database
     public function update(Request $request, Recipe $recipe)
     {
-        //
+        $validated = $request->validate([
+            'name' => 'required|max:255',
+            'description' => 'nullable|string',
+            'category_id' => 'nullable|exists:categories,id',
+            'ingredients' => 'array',
+            'ingredients.*.id' => 'exists:ingredients,id',
+            'ingredients.*.quantity' => 'required_with:ingredients.*.id|string',
+        ]);
+
+        $recipe->update($validated);
+
+        $recipe->ingredients()->detach();
+        if (isset($validated['ingredients'])) {
+            foreach ($validated['ingredients'] as $ingredient) {
+                $recipe->ingredients()->attach($ingredient['id'], ['quantity' => $ingredient['quantity']]);
+            }
+        }
+
+        return redirect()->route('recipes.index')->with('success', 'Рецепт успешно обновлен!');
     }
 
     /**
@@ -60,6 +98,8 @@ class RecipeController extends Controller
      */
     public function destroy(Recipe $recipe)
     {
-        //
+        $recipe->delete();
+
+        return redirect()->route('recipes.index')->with('success', 'Рецепт успешно удален!');
     }
 }
