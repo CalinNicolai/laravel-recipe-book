@@ -6,6 +6,8 @@ use App\Http\Requests\CategoryRequest;
 use App\Models\Category;
 use App\Repositories\CategoryRepository;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class CategoryController extends Controller
 {
@@ -39,9 +41,16 @@ class CategoryController extends Controller
      */
     public function store(CategoryRequest $request)
     {
-        $validated = $request->validated();
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('category-images', 'public');
+        } else {
+            $path = null;
+        }
 
-        Category::create($validated);
+        Category::create([
+            'name' => $request->name,
+            'image' => $path,
+        ]);
 
         return redirect()->route('categories.index')->with('success', 'Категория успешно добавлена!');
     }
@@ -59,7 +68,20 @@ class CategoryController extends Controller
      */
     public function update(CategoryRequest $request, Category $category)
     {
-        $category->update($request->validated());
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('category-images', 'public');
+        } else {
+            $path = $category->image;
+        }
+
+        if ($category->image && Storage::exists('public/' . $category->image)) {
+            Storage::delete('public/' . $category->image);
+        }
+        $category->image = $path;
+
+        $category->name = $request->name;
+
+        $category->save();
 
         return redirect()->route('categories.index')->with('success', 'Категория успешно обновлена!');
     }
@@ -69,7 +91,18 @@ class CategoryController extends Controller
      */
     public function destroy(Category $category)
     {
-        $category->delete();
+        try {
+            $category->recipes()->delete();
+
+            if ($category->image && Storage::exists('public/' . $category->image)) {
+                Storage::delete('public/' . $category->image);
+            }
+
+            $category->delete();
+        } catch (\Exception $e) {
+            Log::error('Ошибка при удалении категории: ', ['exception' => $e->getMessage()]);
+            return redirect()->route('categories.index')->with('error', 'Ошибка при удалении категории.');
+        }
 
         return redirect()->route('categories.index')->with('success', 'Категория успешно удалена!');
     }
